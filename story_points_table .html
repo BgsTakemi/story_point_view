@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開発生産性ストーリーポイント定義表</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .filters {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        input[type="text"], select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            width: 200px;
+        }
+        select {
+            width: 120px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #333;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .hidden {
+            display: none;
+        }
+        .stats {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+        .point-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            color: white;
+            min-width: 20px;
+            text-align: center;
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>開発生産性ストーリーポイント定義表</h1>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="searchInput">検索:</label>
+                <input type="text" id="searchInput" placeholder="キーワードで検索..." onkeyup="filterTable()">
+            </div>
+            <div class="filter-group">
+                <label for="categoryFilter">カテゴリ:</label>
+                <select id="categoryFilter" onchange="filterTable()">
+                    <option value="">すべて</option>
+                    <option value="技術的複雑性">技術的複雑性</option>
+                    <option value="要件・仕様関連">要件・仕様関連</option>
+                    <option value="開発作業量">開発作業量</option>
+                    <option value="依存性・リスク">依存性・リスク</option>
+                    <option value="品質・テスト">品質・テスト</option>
+                    <option value="運用・保守">運用・保守</option>
+                    <option value="会議・コミュニケーション">会議・コミュニケーション</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="pointFilter">ポイント:</label>
+                <select id="pointFilter" onchange="filterTable()">
+                    <option value="">すべて</option>
+                    <option value="1">1pt</option>
+                    <option value="2">2pt</option>
+                    <option value="3">3pt</option>
+                    <option value="5">5pt</option>
+                    <option value="8">8pt</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="stats" id="statsDiv">
+            表示中: <span id="visibleCount">0</span> / <span id="totalCount">0</span> 項目
+        </div>
+        
+        <table id="storyPointsTable">
+            <thead>
+                <tr>
+                    <th>カテゴリ</th>
+                    <th>項目名</th>
+                    <th>ポイント</th>
+                    <th>説明</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const storyPointsData = [
+            // 技術的複雑性
+            { category: "技術的複雑性", item: "コード実装の複雑度", point: 1, description: "単純なCRUD操作" },
+            { category: "技術的複雑性", item: "コード実装の複雑度", point: 3, description: "中程度のアルゴリズム実装" },
+            { category: "技術的複雑性", item: "コード実装の複雑度", point: 5, description: "複雑なアルゴリズムや数学的計算" },
+            { category: "技術的複雑性", item: "コード実装の複雑度", point: 8, description: "高度な最適化が必要な処理" },
+            { category: "技術的複雑性", item: "技術スタックの習熟度", point: 1, description: "チーム全員が熟練" },
+            { category: "技術的複雑性", item: "技術スタックの習熟度", point: 2, description: "大部分のメンバーが経験あり" },
+            { category: "技術的複雑性", item: "技術スタックの習熟度", point: 5, description: "新しい技術、学習が必要" },
+            { category: "技術的複雑性", item: "技術スタックの習熟度", point: 8, description: "全く未経験の技術スタック" },
+            { category: "技術的複雑性", item: "アーキテクチャの複雑性", point: 2, description: "単一モジュール、シンプル構成" },
+            { category: "技術的複雑性", item: "アーキテクチャの複雑性", point: 3, description: "複数モジュール、標準的構成" },
+            { category: "技術的複雑性", item: "アーキテクチャの複雑性", point: 5, description: "マイクロサービス、分散アーキテクチャ" },
+            { category: "技術的複雑性", item: "アーキテクチャの複雑性", point: 8, description: "複雑な分散システム、高可用性要件" },
+            { category: "技術的複雑性", item: "外部API連携の数", point: 1, description: "API連携なし" },
+            { category: "技術的複雑性", item: "外部API連携の数", point: 2, description: "1-2個の既知API" },
+            { category: "技術的複雑性", item: "外部API連携の数", point: 3, description: "3-5個のAPI、または新規API" },
+            { category: "技術的複雑性", item: "外部API連携の数", point: 5, description: "6個以上、または複雑な認証" },
+            { category: "技術的複雑性", item: "データベース設計の複雑度", point: 1, description: "単純なテーブル操作" },
+            { category: "技術的複雑性", item: "データベース設計の複雑度", point: 2, description: "複数テーブルのJOIN" },
+            { category: "技術的複雑性", item: "データベース設計の複雑度", point: 3, description: "複雑なクエリ、インデックス設計" },
+            { category: "技術的複雑性", item: "データベース設計の複雑度", point: 5, description: "パフォーマンス最適化、分散DB" },
+            
+            // 要件・仕様関連
+            { category: "要件・仕様関連", item: "要件の明確性", point: 1, description: "詳細仕様書あり、明確" },
+            { category: "要件・仕様関連", item: "要件の明確性", point: 2, description: "概要仕様あり、詳細は確認可能" },
+            { category: "要件・仕様関連", item: "要件の明確性", point: 3, description: "曖昧な部分あり、調整必要" },
+            { category: "要件・仕様関連", item: "要件の明確性", point: 5, description: "要件が不明確、大幅な調整必要" },
+            { category: "要件・仕様関連", item: "仕様変更の可能性", point: 1, description: "変更可能性低い" },
+            { category: "要件・仕様関連", item: "仕様変更の可能性", point: 2, description: "軽微な変更の可能性" },
+            { category: "要件・仕様関連", item: "仕様変更の可能性", point: 3, description: "中程度の変更リスク" },
+            { category: "要件・仕様関連", item: "仕様変更の可能性", point: 5, description: "大幅な仕様変更の可能性高い" },
+            { category: "要件・仕様関連", item: "ビジネスルールの複雑度", point: 1, description: "シンプルなルール" },
+            { category: "要件・仕様関連", item: "ビジネスルールの複雑度", point: 2, description: "複数条件の組み合わせ" },
+            { category: "要件・仕様関連", item: "ビジネスルールの複雑度", point: 3, description: "複雑な計算ロジック" },
+            { category: "要件・仕様関連", item: "ビジネスルールの複雑度", point: 5, description: "非常に複雑な業務ルール" },
+            { category: "要件・仕様関連", item: "UI/UXの複雑性", point: 1, description: "標準的なフォーム画面" },
+            { category: "要件・仕様関連", item: "UI/UXの複雑性", point: 2, description: "インタラクティブ要素あり" },
+            { category: "要件・仕様関連", item: "UI/UXの複雑性", point: 3, description: "複雑なユーザーフロー" },
+            { category: "要件・仕様関連", item: "UI/UXの複雑性", point: 5, description: "高度なUI/UX、アニメーション" },
+            { category: "要件・仕様関連", item: "多言語対応の必要性", point: 1, description: "単一言語のみ" },
+            { category: "要件・仕様関連", item: "多言語対応の必要性", point: 2, description: "2-3言語対応" },
+            { category: "要件・仕様関連", item: "多言語対応の必要性", point: 3, description: "5言語程度、地域対応" },
+            { category: "要件・仕様関連", item: "多言語対応の必要性", point: 5, description: "多数言語、複雑な地域化" },
+            
+            // 開発作業量
+            { category: "開発作業量", item: "コード行数の見積もり", point: 1, description: "~100行" },
+            { category: "開発作業量", item: "コード行数の見積もり", point: 2, description: "100-300行" },
+            { category: "開発作業量", item: "コード行数の見積もり", point: 3, description: "300-800行" },
+            { category: "開発作業量", item: "コード行数の見積もり", point: 5, description: "800-2000行" },
+            { category: "開発作業量", item: "コード行数の見積もり", point: 8, description: "2000行以上" },
+            { category: "開発作業量", item: "画面・機能数", point: 1, description: "1画面/機能" },
+            { category: "開発作業量", item: "画面・機能数", point: 2, description: "2-3画面/機能" },
+            { category: "開発作業量", item: "画面・機能数", point: 3, description: "4-6画面/機能" },
+            { category: "開発作業量", item: "画面・機能数", point: 5, description: "7-10画面/機能" },
+            { category: "開発作業量", item: "画面・機能数", point: 8, description: "11画面/機能以上" },
+            { category: "開発作業量", item: "テストケース数", point: 1, description: "基本的なテストのみ" },
+            { category: "開発作業量", item: "テストケース数", point: 2, description: "標準的なテストスイート" },
+            { category: "開発作業量", item: "テストケース数", point: 3, description: "包括的なテスト" },
+            { category: "開発作業量", item: "テストケース数", point: 5, description: "大量のテストケース" },
+            { category: "開発作業量", item: "ドキュメント作成量", point: 1, description: "軽微なドキュメント更新" },
+            { category: "開発作業量", item: "ドキュメント作成量", point: 2, description: "標準的な技術文書" },
+            { category: "開発作業量", item: "ドキュメント作成量", point: 3, description: "詳細な設計書" },
+            { category: "開発作業量", item: "ドキュメント作成量", point: 5, description: "包括的なドキュメント一式" },
+            { category: "開発作業量", item: "リファクタリング範囲", point: 1, description: "新規開発、リファクタリング不要" },
+            { category: "開発作業量", item: "リファクタリング範囲", point: 2, description: "軽微なコード整理" },
+            { category: "開発作業量", item: "リファクタリング範囲", point: 3, description: "中程度のリファクタリング" },
+            { category: "開発作業量", item: "リファクタリング範囲", point: 5, description: "大規模なコード再構築" },
+            
+            // 依存性・リスク
+            { category: "依存性・リスク", item: "他チームとの依存関係", point: 1, description: "単独チームで完結" },
+            { category: "依存性・リスク", item: "他チームとの依存関係", point: 2, description: "1チームとの軽微な連携" },
+            { category: "依存性・リスク", item: "他チームとの依存関係", point: 3, description: "複数チームとの調整" },
+            { category: "依存性・リスク", item: "他チームとの依存関係", point: 5, description: "多数チーム、複雑な依存関係" },
+            { category: "依存性・リスク", item: "外部ライブラリ依存度", point: 1, description: "標準ライブラリのみ" },
+            { category: "依存性・リスク", item: "外部ライブラリ依存度", point: 2, description: "一般的なOSSライブラリ" },
+            { category: "依存性・リスク", item: "外部ライブラリ依存度", point: 3, description: "特殊なライブラリ、複数依存" },
+            { category: "依存性・リスク", item: "外部ライブラリ依存度", point: 5, description: "商用ライブラリ、ライセンス問題" },
+            { category: "依存性・リスク", item: "レガシーシステムとの統合", point: 1, description: "レガシー連携なし" },
+            { category: "依存性・リスク", item: "レガシーシステムとの統合", point: 2, description: "シンプルなデータ連携" },
+            { category: "依存性・リスク", item: "レガシーシステムとの統合", point: 3, description: "複数システムとの連携" },
+            { category: "依存性・リスク", item: "レガシーシステムとの統合", point: 5, description: "複雑なレガシー統合" },
+            { category: "依存性・リスク", item: "パフォーマンス要件", point: 1, description: "特別な要件なし" },
+            { category: "依存性・リスク", item: "パフォーマンス要件", point: 2, description: "標準的なパフォーマンス" },
+            { category: "依存性・リスク", item: "パフォーマンス要件", point: 3, description: "高速処理が必要" },
+            { category: "依存性・リスク", item: "パフォーマンス要件", point: 5, description: "極めて厳しいパフォーマンス要件" },
+            { category: "依存性・リスク", item: "セキュリティ要件", point: 1, description: "基本的なセキュリティ" },
+            { category: "依存性・リスク", item: "セキュリティ要件", point: 2, description: "標準的なセキュリティ対策" },
+            { category: "依存性・リスク", item: "セキュリティ要件", point: 3, description: "高度なセキュリティ要件" },
+            { category: "依存性・リスク", item: "セキュリティ要件", point: 5, description: "金融レベルのセキュリティ" },
+            
+            // 品質・テスト
+            { category: "品質・テスト", item: "テスト自動化の範囲", point: 1, description: "手動テストのみ" },
+            { category: "品質・テスト", item: "テスト自動化の範囲", point: 2, description: "基本的な自動テスト" },
+            { category: "品質・テスト", item: "テスト自動化の範囲", point: 3, description: "包括的な自動テスト" },
+            { category: "品質・テスト", item: "テスト自動化の範囲", point: 5, description: "高度なテスト自動化" },
+            { category: "品質・テスト", item: "品質基準の厳しさ", point: 1, description: "標準的な品質" },
+            { category: "品質・テスト", item: "品質基準の厳しさ", point: 2, description: "やや高い品質要求" },
+            { category: "品質・テスト", item: "品質基準の厳しさ", point: 3, description: "高品質要求" },
+            { category: "品質・テスト", item: "品質基準の厳しさ", point: 5, description: "極めて高い品質基準" },
+            { category: "品質・テスト", item: "バグ修正の難易度", point: 1, description: "単純なバグ修正" },
+            { category: "品質・テスト", item: "バグ修正の難易度", point: 2, description: "標準的なデバッグ" },
+            { category: "品質・テスト", item: "バグ修正の難易度", point: 3, description: "複雑な問題調査" },
+            { category: "品質・テスト", item: "バグ修正の難易度", point: 5, description: "根本原因分析が困難" },
+            { category: "品質・テスト", item: "回帰テストの範囲", point: 1, description: "影響範囲が限定的" },
+            { category: "品質・テスト", item: "回帰テストの範囲", point: 2, description: "一部機能への影響" },
+            { category: "品質・テスト", item: "回帰テストの範囲", point: 3, description: "広範囲への影響" },
+            { category: "品質・テスト", item: "回帰テストの範囲", point: 5, description: "システム全体への影響" },
+            { category: "品質・テスト", item: "ユーザビリティテストの必要性", point: 1, description: "特別なテスト不要" },
+            { category: "品質・テスト", item: "ユーザビリティテストの必要性", point: 2, description: "基本的なUsabilityチェック" },
+            { category: "品質・テスト", item: "ユーザビリティテストの必要性", point: 3, description: "詳細なUXテスト" },
+            { category: "品質・テスト", item: "ユーザビリティテストの必要性", point: 5, description: "包括的なユーザーテスト" },
+            
+            // 運用・保守
+            { category: "運用・保守", item: "デプロイの複雑度", point: 1, description: "自動デプロイ、シンプル" },
+            { category: "運用・保守", item: "デプロイの複雑度", point: 2, description: "標準的なデプロイ手順" },
+            { category: "運用・保守", item: "デプロイの複雑度", point: 3, description: "複雑なデプロイ手順" },
+            { category: "運用・保守", item: "デプロイの複雑度", point: 5, description: "手動作業多数、高リスク" },
+            { category: "運用・保守", item: "監視・ログ設定", point: 1, description: "基本ログのみ" },
+            { category: "運用・保守", item: "監視・ログ設定", point: 2, description: "標準的な監視設定" },
+            { category: "運用・保守", item: "監視・ログ設定", point: 3, description: "詳細な監視・アラート" },
+            { category: "運用・保守", item: "監視・ログ設定", point: 5, description: "高度な監視システム" },
+            { category: "運用・保守", item: "バックアップ・復旧対応", point: 1, description: "既存仕組みを利用" },
+            { category: "運用・保守", item: "バックアップ・復旧対応", point: 2, description: "標準的なバックアップ" },
+            { category: "運用・保守", item: "バックアップ・復旧対応", point: 3, description: "複雑なバックアップ戦略" },
+            { category: "運用・保守", item: "バックアップ・復旧対応", point: 5, description: "災害復旧システム" },
+            { category: "運用・保守", item: "スケーラビリティ要件", point: 1, description: "現在の要件のみ" },
+            { category: "運用・保守", item: "スケーラビリティ要件", point: 2, description: "近い将来の拡張考慮" },
+            { category: "運用・保守", item: "スケーラビリティ要件", point: 3, description: "中長期的な拡張性" },
+            { category: "運用・保守", item: "スケーラビリティ要件", point: 5, description: "大規模スケーラビリティ" },
+            { category: "運用・保守", item: "保守性の考慮", point: 1, description: "短期的な実装" },
+            { category: "運用・保守", item: "保守性の考慮", point: 2, description: "標準的な保守性" },
+            { category: "運用・保守", item: "保守性の考慮", point: 3, description: "高い保守性要求" },
+            { category: "運用・保守", item: "保守性の考慮", point: 5, description: "極めて高い保守性要求" },
+            
+            // 会議・コミュニケーション
+            { category: "会議・コミュニケーション", item: "ステークホルダーとの調整", point: 1, description: "開発チーム内のみ" },
+            { category: "会議・コミュニケーション", item: "ステークホルダーとの調整", point: 2, description: "1-2名の関係者との調整" },
+            { category: "会議・コミュニケーション", item: "ステークホルダーとの調整", point: 3, description: "複数部門との調整" },
+            { category: "会議・コミュニケーション", item: "ステークホルダーとの調整", point: 5, description: "多数の関係者、利害関係複雑" },
+            { category: "会議・コミュニケーション", item: "ステークホルダーとの調整", point: 8, description: "経営層・外部企業との調整" },
+            { category: "会議・コミュニケーション", item: "要件定義会議の回数", point: 1, description: "会議不要、仕様明確" },
+            { category: "会議・コミュニケーション", item: "要件定義会議の回数", point: 2, description: "1-2回の確認会議" },
+            { category: "会議・コミュニケーション", item: "要件定義会議の回数", point: 3, description: "3-5回の調整会議" },
+            { category: "会議・コミュニケーション", item: "要件定義会議の回数", point: 5, description: "6-10回の詳細検討" },
+            { category: "会議・コミュニケーション", item: "要件定義会議の回数", point: 8, description: "10回以上の長期検討" },
+            { category: "会議・コミュニケーション", item: "デザインレビューの複雑度", point: 1, description: "軽微な確認のみ" },
+            { category: "会議・コミュニケーション", item: "デザインレビューの複雑度", point: 2, description: "標準的なレビュー" },
+            { category: "会議・コミュニケーション", item: "デザインレビューの複雑度", point: 3, description: "詳細な技術検討" },
+            { category: "会議・コミュニケーション", item: "デザインレビューの複雑度", point: 5, description: "複数回の設計見直し" },
+            { category: "会議・コミュニケーション", item: "デザインレビューの複雑度", point: 8, description: "アーキテクチャ全体の再検討" },
+            { category: "会議・コミュニケーション", item: "進捗報告の頻度", point: 1, description: "週次報告のみ" },
+            { category: "会議・コミュニケーション", item: "進捗報告の頻度", point: 2, description: "隔日報告" },
+            { category: "会議・コミュニケーション", item: "進捗報告の頻度", point: 3, description: "日次報告・詳細共有" },
+            { category: "会議・コミュニケーション", item: "進捗報告の頻度", point: 5, description: "リアルタイム進捗管理" },
+            { category: "会議・コミュニケーション", item: "進捗報告の頻度", point: 8, description: "複数チャネルでの頻繁報告" },
+            { category: "会議・コミュニケーション", item: "承認プロセスの段階数", point: 1, description: "承認不要・自己完結" },
+            { category: "会議・コミュニケーション", item: "承認プロセスの段階数", point: 2, description: "1段階承認（チームリーダー）" },
+            { category: "会議・コミュニケーション", item: "承認プロセスの段階数", point: 3, description: "2段階承認（部門長まで）" },
+            { category: "会議・コミュニケーション", item: "承認プロセスの段階数", point: 5, description: "3段階以上の承認" },
+            { category: "会議・コミュニケーション", item: "承認プロセスの段階数", point: 8, description: "複雑な承認フロー・外部承認" },
+            { category: "会議・コミュニケーション", item: "クライアント説明の必要性", point: 1, description: "説明不要" },
+            { category: "会議・コミュニケーション", item: "クライアント説明の必要性", point: 2, description: "簡単な機能説明" },
+            { category: "会議・コミュニケーション", item: "クライアント説明の必要性", point: 3, description: "詳細なデモンストレーション" },
+            { category: "会議・コミュニケーション", item: "クライアント説明の必要性", point: 5, description: "複数回の説明・調整" },
+            { category: "会議・コミュニケーション", item: "クライアント説明の必要性", point: 8, description: "大規模プレゼンテーション" },
+            { category: "会議・コミュニケーション", item: "技術調査・検証会議", point: 1, description: "技術選定済み・調査不要" },
+            { category: "会議・コミュニケーション", item: "技術調査・検証会議", point: 2, description: "軽微な技術確認" },
+            { category: "会議・コミュニケーション", item: "技術調査・検証会議", point: 3, description: "複数技術の比較検討" },
+            { category: "会議・コミュニケーション", item: "技術調査・検証会議", point: 5, description: "詳細なPoCや検証" },
+            { category: "会議・コミュニケーション", item: "技術調査・検証会議", point: 8, description: "大規模技術調査・外部コンサル" },
+            { category: "会議・コミュニケーション", item: "リスク評価会議", point: 1, description: "リスク評価不要" },
+            { category: "会議・コミュニケーション", item: "リスク評価会議", point: 2, description: "基本的なリスク確認" },
+            { category: "会議・コミュニケーション", item: "リスク評価会議", point: 3, description: "詳細なリスク分析" },
+            { category: "会議・コミュニケーション", item: "リスク評価会議", point: 5, description: "包括的リスク評価・対策立案" },
+            { category: "会議・コミュニケーション", item: "リスク評価会議", point: 8, description: "複雑なリスクマネジメント" },
+            { category: "会議・コミュニケーション", item: "外部ベンダーとの調整", point: 1, description: "外部連携なし" },
+            { category: "会議・コミュニケーション", item: "外部ベンダーとの調整", point: 2, description: "1社との簡単な調整" },
+            { category: "会議・コミュニケーション", item: "外部ベンダーとの調整", point: 3, description: "複数社との調整" },
+            { category: "会議・コミュニケーション", item: "外部ベンダーとの調整", point: 5, description: "複雑な外部連携・契約調整" },
+            { category: "会議・コミュニケーション", item: "外部ベンダーとの調整", point: 8, description: "国際的なベンダー調整" },
+            { category: "会議・コミュニケーション", item: "ユーザーインタビュー・ヒアリング", point: 1, description: "ユーザーヒアリング不要" },
+            { category: "会議・コミュニケーション", item: "ユーザーインタビュー・ヒアリング", point: 2, description: "簡単なアンケート・確認" },
+            { category: "会議・コミュニケーション", item: "ユーザーインタビュー・ヒアリング", point: 3, description: "個別インタビュー（数名）" },
+            { category: "会議・コミュニケーション", item: "ユーザーインタビュー・ヒアリング", point: 5, description: "大規模ユーザー調査" },
+            { category: "会議・コミュニケーション", item: "ユーザーインタビュー・ヒアリング", point: 8, description: "複数拠点・継続的調査" }
+        ];
+
+        function createPointBadge(point) {
+            return `<span class="point-badge">${point}pt</span>`;
+        }
+
+        function populateTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            storyPointsData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-category', item.category);
+                row.setAttribute('data-point', item.point);
+                row.setAttribute('data-search', `${item.category} ${item.item} ${item.description}`.toLowerCase());
+                
+                row.innerHTML = `
+                    <td>${item.category}</td>
+                    <td><strong>${item.item}</strong></td>
+                    <td>${createPointBadge(item.point)}</td>
+                    <td>${item.description}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            updateStats();
+        }
+
+        function filterTable() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const pointFilter = document.getElementById('pointFilter').value;
+            
+            const rows = document.querySelectorAll('#tableBody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const category = row.getAttribute('data-category');
+                const point = row.getAttribute('data-point');
+                const searchText = row.getAttribute('data-search');
+                
+                let show = true;
+                
+                // 検索フィルタ
+                if (searchInput && !searchText.includes(searchInput)) {
+                    show = false;
+                }
+                
+                // カテゴリフィルタ
+                if (categoryFilter && category !== categoryFilter) {
+                    show = false;
+                }
+                
+                // ポイントフィルタ
+                if (pointFilter && point !== pointFilter) {
+                    show = false;
+                }
+                
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('visibleCount').textContent = visibleCount;
+        }
+
+        function updateStats() {
+            const totalCount = storyPointsData.length;
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('visibleCount').textContent = totalCount;
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            populateTable();
+        });
+    </script>
+</body>
+</html>
